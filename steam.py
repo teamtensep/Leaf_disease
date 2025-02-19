@@ -7,7 +7,7 @@ from PIL import Image
 
 
 # Load the trained model
-model_load = tf.keras.models.load_model('saved_model')
+model_load = tf.keras.models.load_model('save_model')
 
 st.title('Plant Village Images Recognizer')
 
