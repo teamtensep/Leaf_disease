@@ -7,15 +7,22 @@ from PIL import Image
 
 
 # Load the trained model
-model_load = tf.keras.models.load_model('model')
+model_load = tf.keras.models.load_model('saved_model')
 
 st.title('Plant Village Images Recognizer')
 
 # Define the class labels
-labels =  ['Apple_scab', 'Apple_black_rot', 'Apple_cedar_apple_rust', 'Apple_healthy', 'Corn_gray_leaf_spot', 'Corn_common_rust', 'Corn_northern_leaf_blight', 'Corn_healthy', 'Grape_black_rot', 'Grape_black_measles', 
-          'Grape_leaf_blight', 'Grape_healthy', 
-          'Potato_early_blight', 'Potato_healthy', 'Potato_late_blight', 'Tomato_bacterial_spot', 'Tomato_early_blight', 'Tomato_healthy', 'Tomato_late_blight', 'Tomato_leaf_mold', 'Tomato_septoria_leaf_spot',
-          'Tomato_spider_mites_two-spotted_spider_mite', 'Tomato_target_spot', 'Tomato_mosaic_virus', 'Tomato_yellow_leaf_curl_virus']
+labels =  [
+    "Apple___Apple_scab", "Apple___Black_rot", "Apple___Cedar_apple_rust", "Apple___healthy",
+    "Corn___Cercospora_leaf_spot Gray_leaf_spot", "Corn___Common_rust", "Corn___healthy",
+    "Corn___Northern_Leaf_Blight", "Grape___Black_rot", "Grape___Esca_(Black_Measles)",
+    "Grape___healthy", "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)", "Potato___Early_blight",
+    "Potato___healthy", "Potato___Late_blight", "Tomato___Bacterial_spot", "Tomato___Early_blight",
+    "Tomato___healthy", "Tomato___Late_blight", "Tomato___Leaf_Mold", "Tomato___Septoria_leaf_spot",
+    "Tomato___Spider_mites Two-spotted_spider_mite", "Tomato___Target_Spot", "Tomato___Tomato_mosaic_virus",
+    "Tomato___Tomato_Yellow_Leaf_Curl_Virus"
+]
+
 
 # Get the uploaded image file
 img_file_buffer = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
