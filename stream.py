@@ -8,8 +8,6 @@ from PIL import Image
 # Load the trained model
 model_load = tf.keras.models.load_model('model')
 
-st.title('Plant Village Images Recognizer')
-
 # Define the class labels
 labels =  ['Apple_scab', 'Apple_black_rot', 'Apple_cedar_apple_rust', 'Apple_healthy', 'Corn_gray_leaf_spot', 'Corn_common_rust', 'Corn_northern_leaf_blight', 'Corn_healthy', 'Grape_black_rot', 'Grape_black_measles', 
           'Grape_leaf_blight', 'Grape_healthy', 
@@ -32,6 +30,7 @@ st.markdown(
         background-color: white;
         padding: 20px;
         box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
+        overflow-y: auto;
     }
     .mobile-frame:before {
         content: '';
@@ -71,62 +70,77 @@ st.markdown(
         width: 100%;
         border-radius: 12px;
     }
+    .stButton>button {
+        width: 100%;
+        border-radius: 12px;
+    }
+    .stRadio>div {
+        flex-direction: column;
+        align-items: center;
+    }
+    .stImage>img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 12px;
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
 
 # Mobile frame container
-with st.container():
-    st.markdown('<div class="mobile-frame">', unsafe_allow_html=True)
+st.markdown('<div class="mobile-frame">', unsafe_allow_html=True)
 
-    # Home page options
-    st.markdown("<h2 style='text-align: center;'>Plant Village</h2>", unsafe_allow_html=True)
-    option = st.radio("Choose an option:", ("Classify Image (Healthy/Unhealthy)", "Show Exact Class"))
+# Title inside the frame
+st.markdown("<h2 style='text-align: center;'>Plant Village</h2>", unsafe_allow_html=True)
 
-    # Get the uploaded image file
-    img_file_buffer = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+# Home page options
+option = st.radio("Choose an option:", ("Classify Image (Healthy/Unhealthy)", "Show Exact Class"))
 
-    if img_file_buffer is not None:
-        # Open the image and convert it to a numpy array
-        image = Image.open(img_file_buffer)
-        img_array = np.array(image)
+# Get the uploaded image file
+img_file_buffer = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
-        # Normalization
-        normalization_layer = tf.keras.layers.Rescaling(1./255)
+if img_file_buffer is not None:
+    # Open the image and convert it to a numpy array
+    image = Image.open(img_file_buffer)
+    img_array = np.array(image)
 
-        # If the "Predict" button is clicked
-        if st.button('Predict'):
-            # view the image
-            st.image(img_array)
-            try:
-                # Resize the image to match the input size of the model
-                img_array = normalization_layer(cv2.resize(img_array.astype('uint8'), (224, 224)))
+    # Normalization
+    normalization_layer = tf.keras.layers.Rescaling(1./255)
 
-                # Add an extra dimension to represent the batch size of 1
-                img_array = np.expand_dims(img_array, axis=0)
+    # If the "Predict" button is clicked
+    if st.button('Predict'):
+        # View the image
+        st.image(img_array, use_column_width=True)
+        try:
+            # Resize the image to match the input size of the model
+            img_array = normalization_layer(cv2.resize(img_array.astype('uint8'), (224, 224)))
 
-                # Get the predicted probabilities for each class
-                val = model_load.predict(img_array)
+            # Add an extra dimension to represent the batch size of 1
+            img_array = np.expand_dims(img_array, axis=0)
 
-                # Get the index of the class with the highest probability
-                predicted_index = np.argmax(val[0])
+            # Get the predicted probabilities for each class
+            val = model_load.predict(img_array)
 
-                # Get the label corresponding to the predicted class
-                predicted_label = labels[predicted_index]
+            # Get the index of the class with the highest probability
+            predicted_index = np.argmax(val[0])
 
-                # Determine if the plant is healthy or unhealthy
-                if "healthy" in predicted_label.lower():
-                    health_status = "Healthy"
-                else:
-                    health_status = "Unhealthy"
+            # Get the label corresponding to the predicted class
+            predicted_label = labels[predicted_index]
 
-                # Display the result based on the selected option
-                if option == "Classify Image (Healthy/Unhealthy)":
-                    st.markdown(f"<h4 style='text-align: center; color: #2F3130;'>The plant is: {health_status}</h4>", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"<h4 style='text-align: center; color: #2F3130;'>The plant is: {predicted_label}</h4>", unsafe_allow_html=True)
-            except:
-                st.error("An error occurred while processing the image.")
+            # Determine if the plant is healthy or unhealthy
+            if "healthy" in predicted_label.lower():
+                health_status = "Healthy"
+            else:
+                health_status = "Unhealthy"
 
-    st.markdown('</div>', unsafe_allow_html=True)
+            # Display the result based on the selected option
+            if option == "Classify Image (Healthy/Unhealthy)":
+                st.markdown(f"<h4 style='text-align: center; color: #2F3130;'>The plant is: {health_status}</h4>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<h4 style='text-align: center; color: #2F3130;'>The plant is: {predicted_label}</h4>", unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"An error occurred while processing the image: {e}")
+
+# Close the mobile frame container
+st.markdown('</div>', unsafe_allow_html=True)
