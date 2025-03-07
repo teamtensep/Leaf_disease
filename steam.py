@@ -8,20 +8,58 @@ from PIL import Image
 # Load the trained model
 model_load = tf.keras.models.load_model('saved_model')
 
+# Custom CSS for mobile frame and styling
 st.markdown("""
     <style>
-        .mobile-container {
-            max-width: 400px;
+        .mobile-frame {
+            width: 375px; /* Width of a typical mobile phone */
+            height: 667px; /* Height of a typical mobile phone */
             margin: auto;
             padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 30px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
+            background-color: #f0f0f0;
+            position: relative;
+            overflow: hidden;
+        }
+        .mobile-screen {
+            width: 100%;
+            height: 100%;
             background-color: #ffffff;
+            border-radius: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .mobile-screen::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Chrome, Safari and Opera */
+        }
+        .mobile-screen {
+            -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
+            scrollbar-width: none;  /* Hide scrollbar for Firefox */
+        }
+        .mobile-container {
+            max-width: 100%;
+            margin: auto;
+        }
+        .stButton button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+        }
+        .stButton button:hover {
+            background-color: #45a049;
         }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<div class='mobile-container'>", unsafe_allow_html=True)
+# Mobile frame
+st.markdown("<div class='mobile-frame'><div class='mobile-screen'><div class='mobile-container'>", unsafe_allow_html=True)
 
 st.title('Plant Village Recognizer')
 
@@ -66,4 +104,5 @@ if st.button('Predict'):
     except:
         st.error("Error processing the image.")
 
-st.markdown("</div>", unsafe_allow_html=True)
+# Close mobile frame
+st.markdown("</div></div></div>", unsafe_allow_html=True)
