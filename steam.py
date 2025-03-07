@@ -114,7 +114,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Mobile frame
+# Mobile frame with everything inside the mobile screen
 st.markdown("""
     <div class='mobile-frame'>
         <div class='notch'>
@@ -124,10 +124,8 @@ st.markdown("""
         <div class='volume-buttons'></div>
         <div class='mobile-screen'>
             <div class='mobile-container'>
+                <h1 style='text-align: center;'>Plant Village Recognizer</h1>
 """, unsafe_allow_html=True)
-
-# Title and content inside the mobile frame
-st.markdown("<h1 style='text-align: center;'>Plant Village Recognizer</h1>", unsafe_allow_html=True)
 
 # Define class labels
 labels = ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy',
@@ -141,34 +139,37 @@ labels = ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust',
 # Get uploaded image
 img_file_buffer = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
-if img_file_buffer is not None:
-    image = Image.open(img_file_buffer)
-    img_array = np.array(image)
-
 # Normalization layer
 normalization_layer = tf.keras.layers.Rescaling(1./255)
 
 # Select mode
 mode = st.radio("Choose mode:", ["Check Healthy/Unhealthy", "Predict Exact Disease"])
 
+if img_file_buffer is not None:
+    image = Image.open(img_file_buffer)
+    img_array = np.array(image)
+
 if st.button('Predict'):
-    st.image(img_array, caption='Uploaded Image', use_column_width=True)
-    try:
-        img_array = normalization_layer(cv2.resize(img_array.astype('uint8'), (224, 224)))
-        img_array = np.expand_dims(img_array, axis=0)
-        val = model_load.predict(img_array)
-        predicted_index = np.argmax(val[0])
-        predicted_label = labels[predicted_index]
-        
-        if mode == "Check Healthy/Unhealthy":
-            if 'healthy' in predicted_label.lower():
-                st.success("The plant is Healthy 🌿")
+    if img_file_buffer is not None:
+        st.image(img_array, caption='Uploaded Image', use_column_width=True)
+        try:
+            img_array = normalization_layer(cv2.resize(img_array.astype('uint8'), (224, 224)))
+            img_array = np.expand_dims(img_array, axis=0)
+            val = model_load.predict(img_array)
+            predicted_index = np.argmax(val[0])
+            predicted_label = labels[predicted_index]
+            
+            if mode == "Check Healthy/Unhealthy":
+                if 'healthy' in predicted_label.lower():
+                    st.success("The plant is Healthy 🌿")
+                else:
+                    st.error("The plant is Unhealthy ❌")
             else:
-                st.error("The plant is Unhealthy ❌")
-        else:
-            st.markdown(f"<h4 style='color: #2F3130;'>{predicted_label}</h4>", unsafe_allow_html=True)
-    except:
-        st.error("Error processing the image.")
+                st.markdown(f"<h4 style='color: #2F3130;'>{predicted_label}</h4>", unsafe_allow_html=True)
+        except:
+            st.error("Error processing the image.")
+    else:
+        st.error("Please upload an image to proceed.")
 
 # Close mobile frame
 st.markdown("""
