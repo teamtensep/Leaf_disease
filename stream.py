@@ -6,7 +6,7 @@ import cv2
 from PIL import Image
 
 # Load the trained model from .h5 file
-model_load = tf.keras.models.load_model('model.h5')
+model_load = tf.keras.models.load_model('final_mobilenetv3_model.h5')
 
 # Define the class labels
 labels =  ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy',
