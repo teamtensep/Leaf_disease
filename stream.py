@@ -1,11 +1,11 @@
 import numpy as np
-import pandas as pd
 import streamlit as st
 import tensorflow as tf
 import cv2
 from PIL import Image
+from tensorflow.keras.applications import mobilenet_v3
 
-# Load the trained model from .h5 file
+# Load the trained model
 model_load = tf.keras.models.load_model('final_mobilenetv3_model.h5')
 
 # Define the class labels
@@ -17,133 +17,60 @@ labels =  ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust'
  'Tomato___Septoria_leaf_spot', 'Tomato___Spider_mites Two-spotted_spider_mite',
  'Tomato___Target_Spot', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus', 'Tomato___healthy']
 
-# Custom CSS to style the app like a mobile phone
-st.markdown(
-    """
-    <style>
-    .mobile-frame {
-        width: 375px;
-        height: 667px;
-        margin: auto;
-        border: 16px black solid;
-        border-top-width: 60px;
-        border-bottom-width: 60px;
-        border-radius: 36px;
-        position: relative;
-        background-color: white;
-        padding: 20px;
-        box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
-        overflow-y: auto;
-    }
-    .mobile-frame:before {
-        content: '';
-        display: block;
-        width: 60px;
-        height: 5px;
-        position: absolute;
-        top: -30px;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #333;
-        border-radius: 10px;
-    }
-    .mobile-frame:after {
-        content: '';
-        display: block;
-        width: 35px;
-        height: 35px;
-        position: absolute;
-        left: 50%;
-        bottom: -65px;
-        transform: translate(-50%, -50%);
-        background: #333;
-        border-radius: 50%;
-    }
-    .button {
-        background-color: #4CAF50;
-        border: none;
-        color: white;
-        padding: 15px 32px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 16px;
-        margin: 4px 2px;
-        cursor: pointer;
-        width: 100%;
-        border-radius: 12px;
-    }
-    .stButton>button {
-        width: 100%;
-        border-radius: 12px;
-    }
-    .stRadio>div {
-        flex-direction: column;
-        align-items: center;
-    }
-    .stImage>img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 12px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# Image size and batch size
+IMG_SIZE = (224, 224)
+BATCH_SIZE = 64
 
-# Mobile frame container
-st.markdown('<div class="mobile-frame">', unsafe_allow_html=True)
+# Function to preprocess an image
+def preprocess_image(image, augment=False):
+    image = tf.image.resize(image, IMG_SIZE)
+    
+    if augment:
+        image = tf.image.random_flip_left_right(image)
+        image = tf.image.random_brightness(image, 0.2)
+        image = tf.image.random_contrast(image, 0.8, 1.2)
+        image = tf.image.random_saturation(image, 0.8, 1.2)
+        image = tf.image.random_crop(image, size=[IMG_SIZE[0]-20, IMG_SIZE[1]-20, 3])
+        image = tf.image.resize(image, IMG_SIZE)
+    
+    # Apply MobileNetV3 preprocessing
+    image = mobilenet_v3.preprocess_input(image)
+    return image
 
-# Title inside the frame
-st.markdown("<h2 style='text-align: center;'>Plant Village</h2>", unsafe_allow_html=True)
+# Streamlit UI
+st.title("Plant Village - Disease Classification")
 
-# Home page options
-option = st.radio("Choose an option:", ("Classify Image (Healthy/Unhealthy)", "Show Exact Class"))
-
-# Get the uploaded image file
+# Upload image
 img_file_buffer = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 if img_file_buffer is not None:
-    # Open the image and convert it to a numpy array
     image = Image.open(img_file_buffer)
     img_array = np.array(image)
 
-    # Normalization
-    normalization_layer = tf.keras.layers.Rescaling(1./255)
+    # Display image
+    st.image(img_array, caption="Uploaded Image", use_column_width=True)
 
-    # If the "Predict" button is clicked
-    if st.button('Predict'):
-        # View the image
-        st.image(img_array, use_column_width=True)
+    if st.button("Predict"):
         try:
-            # Resize the image to match the input size of the model
-            img_array = normalization_layer(cv2.resize(img_array.astype('uint8'), (224, 224)))
+            # Convert to Tensor
+            img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
+            
+            # Preprocess the image (no augmentation for inference)
+            img_tensor = preprocess_image(img_tensor, augment=False)
+            
+            # Expand dimensions for batch
+            img_tensor = tf.expand_dims(img_tensor, axis=0)
 
-            # Add an extra dimension to represent the batch size of 1
-            img_array = np.expand_dims(img_array, axis=0)
-
-            # Get the predicted probabilities for each class
-            val = model_load.predict(img_array)
-
-            # Get the index of the class with the highest probability
-            predicted_index = np.argmax(val[0])
-
-            # Get the label corresponding to the predicted class
+            # Make prediction
+            predictions = model_load.predict(img_tensor)
+            predicted_index = np.argmax(predictions[0])
             predicted_label = labels[predicted_index]
 
-            # Determine if the plant is healthy or unhealthy
-            if "healthy" in predicted_label.lower():
-                health_status = "Healthy"
-            else:
-                health_status = "Unhealthy"
+            # Classify as Healthy or Unhealthy
+            health_status = "Healthy" if "healthy" in predicted_label.lower() else "Unhealthy"
 
-            # Display the result based on the selected option
-            if option == "Classify Image (Healthy/Unhealthy)":
-                st.markdown(f"<h4 style='text-align: center; color: #2F3130;'>The plant is: {health_status}</h4>", unsafe_allow_html=True)
-            else:
-                st.markdown(f"<h4 style='text-align: center; color: #2F3130;'>The plant is: {predicted_label}</h4>", unsafe_allow_html=True)
+            # Display result
+            st.markdown(f"**Plant Health Status:** {health_status}")
+            st.markdown(f"**Exact Classification:** {predicted_label}")
         except Exception as e:
-            st.error(f"An error occurred while processing the image: {e}")
-
-# Close the mobile frame container
-st.markdown('</div>', unsafe_allow_html=True)
+            st.error(f"Error processing image: {e}")
