@@ -1,18 +1,20 @@
 import tensorflow as tf
 import streamlit as st
 import numpy as np
-import cv2
 from PIL import Image
 from tensorflow.keras.applications import mobilenet_v3
 
 MODEL_PATH = "new_again_final_mobilenetv3_model"
 
-# Load model safely
+# Fix model loading issue
 model_load = None  
 try:
     model_load = tf.keras.models.load_model(MODEL_PATH, compile=False)
+
+    # Ensure `trainable` is a boolean for all layers
     for layer in model_load.layers:
-        layer.trainable = False
+        layer.trainable = bool(layer.trainable)  # Convert any non-boolean to True/False
+
     st.success("✅ Model loaded successfully!")
 except Exception as e:
     st.error(f"❌ Error loading model: {e}")
