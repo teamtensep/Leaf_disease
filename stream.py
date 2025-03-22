@@ -6,7 +6,7 @@ from PIL import Image
 from tensorflow.keras.applications import mobilenet_v3
 
 # Load the trained model
-model_load = tf.keras.models.load_model('final_mobilenetv3_model.h5')
+model_load = tf.keras.models.load_model('new_again_final_mobilenetv3_model.h5')
 
 # Define the class labels
 labels =  ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy',
