@@ -5,15 +5,19 @@ import cv2
 from PIL import Image
 from tensorflow.keras.applications import mobilenet_v3
 
-# ✅ Ensure correct path
 MODEL_PATH = "new_again_final_mobilenetv3_model"
 
 try:
-    model_load = tf.keras.models.load_model(MODEL_PATH)
-    st.success("✅ Model loaded successfully!")
-except Exception as e:
-    st.error(f"❌ Error loading model: {e}")
+    # Load the model in SavedModel format
+    model_load = tf.keras.models.load_model(MODEL_PATH, compile=False)
 
+    # Ensure all layers are set properly
+    for layer in model_load.layers:
+        layer.trainable = False  # or True, depending on your requirement
+
+    print("✅ Model loaded successfully!")
+except Exception as e:
+    print(f"❌ Error loading model: {e}")
 # Define class labels
 labels =  [
     'Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy',
