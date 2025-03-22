@@ -1,70 +1,56 @@
-import tensorflow as tf
-import streamlit as st
 import numpy as np
+import pandas as pd
+import streamlit as st
+import tensorflow as tf
+import cv2
 from PIL import Image
-from tensorflow.keras.applications import mobilenet_v3
 
-MODEL_PATH = "new_again_final_mobilenetv3_model"
+# Load the trained model
+model_load = tf.keras.models.load_model('again_new_scratch')
 
-# Fix model loading issue
-model_load = None  
-try:
-    model_load = tf.keras.models.load_model(MODEL_PATH, compile=False)
-
-    # Ensure `trainable` is a boolean for all layers
-    for layer in model_load.layers:
-        layer.trainable = bool(layer.trainable)  # Convert any non-boolean to True/False
-
-    st.success("✅ Model loaded successfully!")
-except Exception as e:
-    st.error(f"❌ Error loading model: {e}")
+# Title of the app
+st.title('Plant Village Recognizer')
 
 # Define class labels
-labels = [
-    'Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy',
-    'Corn___Cercospora_leaf_spot Gray_leaf_spot', 'Corn___Common_rust', 'Corn___Northern_Leaf_Blight', 'Corn___healthy',
-    'Grape___Black_rot', 'Grape___Esca_(Black_Measles)', 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', 'Grape___healthy',
-    'Potato___Early_blight', 'Potato___Late_blight', 'Potato___healthy',
-    'Tomato___Bacterial_spot', 'Tomato___Early_blight', 'Tomato___Late_blight', 'Tomato___Leaf_Mold',
-    'Tomato___Septoria_leaf_spot', 'Tomato___Spider_mites Two-spotted_spider_mite',
-    'Tomato___Target_Spot', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus', 'Tomato___healthy'
-]
+labels = ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy',
+ 'Corn___Cercospora_leaf_spot Gray_leaf_spot', 'Corn___Common_rust', 'Corn___Northern_Leaf_Blight', 'Corn___healthy',
+ 'Grape___Black_rot', 'Grape___Esca_(Black_Measles)', 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', 'Grape___healthy',
+ 'Potato___Early_blight', 'Potato___Late_blight', 'Potato___healthy',
+ 'Tomato___Bacterial_spot', 'Tomato___Early_blight', 'Tomato___Late_blight', 'Tomato___Leaf_Mold',
+ 'Tomato___Septoria_leaf_spot', 'Tomato___Spider_mites Two-spotted_spider_mite',
+ 'Tomato___Target_Spot', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus', 'Tomato___healthy']
 
-IMG_SIZE = (224, 224)
-
-# Preprocess function
-def preprocess_image(image):
-    image = tf.image.resize(image, IMG_SIZE)
-    image = mobilenet_v3.preprocess_input(image)  # Normalize for MobileNetV3
-    return image
-
-# Streamlit UI
-st.title("Plant Disease Classification")
-
+# Get uploaded image
 img_file_buffer = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+
+# Normalization layer
+normalization_layer = tf.keras.layers.Rescaling(1./255)
+
+# Select mode
+mode = st.radio("Choose mode:", ["Check Healthy/Unhealthy", "Predict Exact Disease"])
 
 if img_file_buffer is not None:
     image = Image.open(img_file_buffer)
     img_array = np.array(image)
 
-    st.image(img_array, caption="Uploaded Image", use_column_width=True)
-
-    if st.button("Predict"):
-        if model_load is None:
-            st.error("❌ Model is not loaded. Please check for errors above.")
-        else:
-            try:
-                img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
-                img_tensor = preprocess_image(img_tensor)
-                img_tensor = tf.expand_dims(img_tensor, axis=0)  # (1, 224, 224, 3)
-
-                predictions = model_load.predict(img_tensor)
-                predicted_index = np.argmax(predictions[0])
-                predicted_label = labels[predicted_index]
-
-                health_status = "Healthy" if "healthy" in predicted_label.lower() else "Unhealthy"
-                st.markdown(f"**Plant Health Status:** {health_status}")
-                st.markdown(f"**Exact Classification:** {predicted_label}")
-
-            except Exception as e:
-                st.error(f"Error processing image: {e}")
+if st.button('Predict'):
+    if img_file_buffer is not None:
+        st.image(img_array, caption='Uploaded Image', use_column_width=True)
+        try:
+            img_array = normalization_layer(cv2.resize(img_array.astype('uint8'), (224, 224)))
+            img_array = np.expand_dims(img_array, axis=0)
+            val = model_load.predict(img_array)
+            predicted_index = np.argmax(val[0])
+            predicted_label = labels[predicted_index]
+            
+            if mode == "Check Healthy/Unhealthy":
+                if 'healthy' in predicted_label.lower():
+                    st.success("The plant is Healthy 🌿")
+                else:
+                    st.error("The plant is Unhealthy ❌")
+            else:
+                st.markdown(f"<h4 style='color: #2F3130;'>{predicted_label}</h4>", unsafe_allow_html=True)
+        except:
+            st.error("Error processing the image.")
+    else:
+        st.error("Please upload an image to proceed.")
