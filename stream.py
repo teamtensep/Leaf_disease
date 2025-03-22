@@ -7,19 +7,18 @@ from tensorflow.keras.applications import mobilenet_v3
 
 MODEL_PATH = "new_again_final_mobilenetv3_model"
 
+# Load model safely
+model_load = None  
 try:
-    # Load the model in SavedModel format
     model_load = tf.keras.models.load_model(MODEL_PATH, compile=False)
-
-    # Ensure all layers are set properly
     for layer in model_load.layers:
-        layer.trainable = False  # or True, depending on your requirement
-
-    print("✅ Model loaded successfully!")
+        layer.trainable = False
+    st.success("✅ Model loaded successfully!")
 except Exception as e:
-    print(f"❌ Error loading model: {e}")
+    st.error(f"❌ Error loading model: {e}")
+
 # Define class labels
-labels =  [
+labels = [
     'Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy',
     'Corn___Cercospora_leaf_spot Gray_leaf_spot', 'Corn___Common_rust', 'Corn___Northern_Leaf_Blight', 'Corn___healthy',
     'Grape___Black_rot', 'Grape___Esca_(Black_Measles)', 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', 'Grape___healthy',
@@ -49,18 +48,21 @@ if img_file_buffer is not None:
     st.image(img_array, caption="Uploaded Image", use_column_width=True)
 
     if st.button("Predict"):
-        try:
-            img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
-            img_tensor = preprocess_image(img_tensor)
-            img_tensor = tf.expand_dims(img_tensor, axis=0)  # (1, 224, 224, 3)
+        if model_load is None:
+            st.error("❌ Model is not loaded. Please check for errors above.")
+        else:
+            try:
+                img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
+                img_tensor = preprocess_image(img_tensor)
+                img_tensor = tf.expand_dims(img_tensor, axis=0)  # (1, 224, 224, 3)
 
-            predictions = model_load.predict(img_tensor)
-            predicted_index = np.argmax(predictions[0])
-            predicted_label = labels[predicted_index]
+                predictions = model_load.predict(img_tensor)
+                predicted_index = np.argmax(predictions[0])
+                predicted_label = labels[predicted_index]
 
-            health_status = "Healthy" if "healthy" in predicted_label.lower() else "Unhealthy"
-            st.markdown(f"**Plant Health Status:** {health_status}")
-            st.markdown(f"**Exact Classification:** {predicted_label}")
+                health_status = "Healthy" if "healthy" in predicted_label.lower() else "Unhealthy"
+                st.markdown(f"**Plant Health Status:** {health_status}")
+                st.markdown(f"**Exact Classification:** {predicted_label}")
 
-        except Exception as e:
-            st.error(f"Error processing image: {e}")
+            except Exception as e:
+                st.error(f"Error processing image: {e}")
