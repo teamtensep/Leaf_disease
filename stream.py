@@ -5,9 +5,11 @@ import cv2
 from PIL import Image
 from tensorflow.keras.applications import mobilenet_v3
 
-# Load the trained model
-model_load = tf.keras.models.load_model("new_again_final_mobilenetv3_model")
-# Define the class labels
+# Load the trained TensorFlow model (not .h5)
+MODEL_PATH = "new_again_final_mobilenetv3_model"
+model_load = tf.keras.models.load_model(MODEL_PATH)
+
+# Define class labels
 labels =  ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy',
  'Corn___Cercospora_leaf_spot Gray_leaf_spot', 'Corn___Common_rust', 'Corn___Northern_Leaf_Blight', 'Corn___healthy',
  'Grape___Black_rot', 'Grape___Esca_(Black_Measles)', 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', 'Grape___healthy',
@@ -16,47 +18,36 @@ labels =  ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust'
  'Tomato___Septoria_leaf_spot', 'Tomato___Spider_mites Two-spotted_spider_mite',
  'Tomato___Target_Spot', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus', 'Tomato___healthy']
 
-# Image size and batch size
+# Image size for model input
 IMG_SIZE = (224, 224)
-BATCH_SIZE = 64
 
 # Function to preprocess an image
-def preprocess_image(image, augment=False):
+def preprocess_image(image):
     image = tf.image.resize(image, IMG_SIZE)
-    
-    if augment:
-        image = tf.image.random_flip_left_right(image)
-        image = tf.image.random_brightness(image, 0.2)
-        image = tf.image.random_contrast(image, 0.8, 1.2)
-        image = tf.image.random_saturation(image, 0.8, 1.2)
-        image = tf.image.random_crop(image, size=[IMG_SIZE[0]-20, IMG_SIZE[1]-20, 3])
-        image = tf.image.resize(image, IMG_SIZE)
-    
-    # Apply MobileNetV3 preprocessing
-    image = mobilenet_v3.preprocess_input(image)
+    image = mobilenet_v3.preprocess_input(image)  # MobileNetV3 preprocessing
     return image
 
 # Streamlit UI
-st.title("Plant Village - Disease Classification")
+st.title("🌿 Plant Village - Disease Classification")
 
 # Upload image
-img_file_buffer = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+img_file_buffer = st.file_uploader("📸 Upload an image", type=["png", "jpg", "jpeg"])
 
 if img_file_buffer is not None:
     image = Image.open(img_file_buffer)
     img_array = np.array(image)
 
-    # Display image
+    # Display uploaded image
     st.image(img_array, caption="Uploaded Image", use_column_width=True)
 
-    if st.button("Predict"):
+    if st.button("🔍 Predict"):
         try:
-            # Convert to Tensor
+            # Convert image to Tensor
             img_tensor = tf.convert_to_tensor(img_array, dtype=tf.float32)
-            
-            # Preprocess the image (no augmentation for inference)
-            img_tensor = preprocess_image(img_tensor, augment=False)
-            
+
+            # Preprocess the image
+            img_tensor = preprocess_image(img_tensor)
+
             # Expand dimensions for batch
             img_tensor = tf.expand_dims(img_tensor, axis=0)
 
@@ -65,11 +56,13 @@ if img_file_buffer is not None:
             predicted_index = np.argmax(predictions[0])
             predicted_label = labels[predicted_index]
 
-            # Classify as Healthy or Unhealthy
-            health_status = "Healthy" if "healthy" in predicted_label.lower() else "Unhealthy"
+            # Determine health status
+            health_status = "✅ Healthy" if "healthy" in predicted_label.lower() else "⚠️ Unhealthy"
 
             # Display result
-            st.markdown(f"**Plant Health Status:** {health_status}")
-            st.markdown(f"**Exact Classification:** {predicted_label}")
+            st.markdown(f"### 🌱 **Plant Health Status:** {health_status}")
+            st.markdown(f"### 🔬 **Disease Classification:** {predicted_label}")
+
         except Exception as e:
-            st.error(f"Error processing image: {e}")
+            st.error(f"❌ Error processing image: {e}")
+
