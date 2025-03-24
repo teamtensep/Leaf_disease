@@ -6,7 +6,7 @@ import cv2
 from PIL import Image
 
 # Load the trained model
-model_load = tf.keras.models.load_model('1_new_again_final_mobilenetv3_model')
+model_load = tf.keras.models.load_model('2_mnv3_best_model')
 
 # Title of the app
 st.title('Plant Village Recognizer')
