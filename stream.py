@@ -1,11 +1,9 @@
 import numpy as np
-import pandas as pd
 import streamlit as st
 import tensorflow as tf
 import cv2
-import matplotlib.pyplot as plt
-import seaborn as sns
 from PIL import Image
+import matplotlib.pyplot as plt
 
 # Load the trained model
 @st.cache_resource
@@ -34,41 +32,17 @@ img_file_buffer = st.file_uploader("📷 Upload an image", type=["png", "jpg", "
 # Select mode
 mode = st.radio("🎯 Choose mode:", ["Check Healthy/Unhealthy", "Predict Exact Disease"])
 
-def preprocess_image(image):
-    img_array = np.array(image)
-    img_array = cv2.resize(img_array.astype('uint8'), (224, 224))
-    img_array = img_array / 255.0  # Normalize
-    img_array = np.expand_dims(img_array, axis=0)
-    return img_array
-
-def get_gradcam_heatmap(img_array, model, layer_name="Conv_1"):
-    grad_model = tf.keras.models.Model(
-        [model.inputs], [model.get_layer(layer_name).output, model.output]
-    )
-    with tf.GradientTape() as tape:
-        conv_outputs, predictions = grad_model(img_array)
-        loss = predictions[:, np.argmax(predictions[0])]
-    grads = tape.gradient(loss, conv_outputs)
-    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
-    heatmap = tf.reduce_mean(tf.multiply(pooled_grads, conv_outputs), axis=-1)[0]
-    heatmap = np.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
-    return heatmap.numpy()
-
-def overlay_heatmap(img_array, heatmap):
-    heatmap = cv2.resize(heatmap, (224, 224))
-    heatmap = np.uint8(255 * heatmap)
-    heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
-    superimposed_img = cv2.addWeighted(img_array.astype('uint8'), 0.6, heatmap, 0.4, 0)
-    return superimposed_img
-
 if img_file_buffer is not None:
     image = Image.open(img_file_buffer)
-    img_array = preprocess_image(image)
+    img_array = np.array(image)  # No preprocessing, keeping original image as is
 
     if st.button('🔍 Predict'):
         st.image(image, caption='Uploaded Image', use_column_width=True)
 
         try:
+            # Expand dimensions to match model input shape (batch size, height, width, channels)
+            img_array = np.expand_dims(img_array, axis=0)
+
             # Make prediction
             predictions = model.predict(img_array)
             predicted_index = np.argmax(predictions[0])
@@ -89,12 +63,6 @@ if img_file_buffer is not None:
                     st.error(f"❌ The plant is Unhealthy ({confidence:.2f}%)")
             else:
                 st.markdown(f"<h4 style='color: #2F3130;'>🩺 {predicted_label} ({confidence:.2f}%)</h4>", unsafe_allow_html=True)
-
-            # Grad-CAM Visualization
-            st.subheader("🖼️ Model Focus (Grad-CAM)")
-            heatmap = get_gradcam_heatmap(img_array, model)
-            superimposed_img = overlay_heatmap(np.array(image.resize((224, 224))), heatmap)
-            st.image(superimposed_img, caption='Grad-CAM Heatmap', use_column_width=True)
 
         except Exception as e:
             st.error(f"⚠️ Error: {str(e)}")
