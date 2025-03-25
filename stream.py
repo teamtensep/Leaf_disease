@@ -17,9 +17,6 @@ labels = ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust',
 # Get uploaded image
 img_file_buffer = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
-# Normalization layer
-normalization_layer = tf.keras.layers.Rescaling(1./255)
-
 # Select mode
 mode = st.radio("Choose mode:", ["Check Healthy/Unhealthy", "Predict Exact Disease"])
 
