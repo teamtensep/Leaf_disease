@@ -1,9 +1,7 @@
 import numpy as np
 import streamlit as st
 import tensorflow as tf
-import cv2
 from PIL import Image
-import matplotlib.pyplot as plt
 
 # Load the trained model
 @st.cache_resource
@@ -34,10 +32,11 @@ mode = st.radio("🎯 Choose mode:", ["Check Healthy/Unhealthy", "Predict Exact 
 
 if img_file_buffer is not None:
     image = Image.open(img_file_buffer)
-    img_array = np.array(image)  # No preprocessing, keeping original image as is
+    image = image.resize((224, 224))  # Resize to match model input size
+    img_array = np.array(image)
 
     if st.button('🔍 Predict'):
-        st.image(image, caption='Uploaded Image', use_column_width=True)
+        st.image(image, caption='Uploaded Image (Resized to 224x224)', use_column_width=True)
 
         try:
             # Expand dimensions to match model input shape (batch size, height, width, channels)
