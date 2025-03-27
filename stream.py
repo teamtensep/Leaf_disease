@@ -31,7 +31,7 @@ img_file_buffer = st.file_uploader("📷 Upload an image", type=["png", "jpg", "
 mode = st.radio("🎯 Choose mode:", ["Check Healthy/Unhealthy", "Predict Exact Disease"])
 
 if img_file_buffer is not None:
-    image = Image.open(img_file_buffer)
+    image = Image.open(img_file_buffer).convert("RGB")  # Convert to RGB to remove alpha channel
     image = image.resize((224, 224))  # Resize to match model input size
     img_array = np.array(image)
 
