@@ -11,7 +11,7 @@ def load_model():
 model = load_model()
 
 # Title of the app
-st.title('🌱 Plant Village Disease Detector')
+st.title('🌱 Leaf Disease Detector')
 
 # Define class labels
 labels = [
